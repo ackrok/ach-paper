@@ -1,20 +1,4 @@
 %%
-convertH5
-%select .h5 files you want to convert to .mat files
-%select Photometry/Reference/Wheel for each AI name
-%e.g. ACh >> Photometry, ref_ACh >> Reference
-
-%%
-processData
-%select .mat files you want to process
-%select .m script with Params
-%look over parameters in pop-up window and if necessary, adjust
-%select YES for demodulation
-%select NO for isosbestic
-%ACh modulation frequency = 217Hz
-%DA modulation frequency = 319Hz
-
-%% 
 fPath = 'R:\Grant Z\Fiber Photometry\'; 
 [fName,fPath] = uigetfile('*.mat','MultiSelect','On');
 %select .mat files you want to add to summary data structure
@@ -51,4 +35,3 @@ for x = 1:length(fName)
     fprintf('Extracted from %s\n',fName{x});
 end
 cd(fPath)
-save(['GZ002-8_',site,'_',day],'beh'); %save combined data strucure
