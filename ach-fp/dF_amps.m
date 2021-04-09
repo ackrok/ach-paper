@@ -21,21 +21,23 @@ end; fprintf('Done %s: new rest threshold = 0.25.\n',beh(1).FPnames{1});
 
 %% Extract ACh dF/F values for REST vs MOV
 mat = struct;
-for x = 1:length(beh)
-    mat(x).rec = beh(x).rec;
-    mat(x).FPnames = beh(x).FPnames;
+for x = 1:length(raw)
+    b = find(strcmp({beh.rec},raw(x).rec));
+    mat(x).rec = beh(b).rec;
+    mat(x).FPnames = beh(b).FPnames;
     mat(x).fp = raw(x).fp(:);
     mat(x).fp_mvmt = []; mat(x).fp_rest = [];
-    for y = 1:length(beh(x).on)
+    for y = 1:length(beh(b).on)
 %%         
 %         fp = beh(x).fp(:,y); % Extract photometry signal for this sweep
 %         fp = (fp - min(fp))/(max(fp) - min(fp)); % Min-Max Normalization
-          fp = raw(x).fp(:,y); % Extract photometry signal for this sweep
+%         fp = raw(x).fp(:,y); % Extract photometry signal for this sweep
 %         fp = fpfinal{x,y};
+        fp = raw(x).fp_prc1(:,y);
 
 %%        
-        t_mr = cell(2,2); t_mr{1,1} = beh(x).on{y}; t_mr{2,1} = beh(x).off{y}; 
-        t_mr{1,2} = beh(x).onRest{y}; t_mr{2,2} = beh(x).offRest{y}; 
+        t_mr = cell(2,2); t_mr{1,1} = beh(b).on{y}; t_mr{2,1} = beh(b).off{y}; 
+        t_mr{1,2} = beh(b).onRest{y}; t_mr{2,2} = beh(b).offRest{y}; 
         tmp_sig = cell(1,2);
         for a = 1:2 % Repeat over movement, rest
             tmp_vec = []; % Clear/initialize vector
@@ -70,9 +72,9 @@ end; linkaxes(sp,'x');
 %% HISTOGRAM: REST vs MOV
 figure; hold on
 yyaxis left
-histogram(fp_rest_all,'BinWidth',0.1,'FaceColor','r','FaceAlpha',0.2,'EdgeAlpha',0.5,'Normalization','probability','DisplayName','REST');
+histogram(fp_rest_all,'BinWidth',0.2,'FaceColor','r','FaceAlpha',0.2,'EdgeAlpha',0.5,'Normalization','probability','DisplayName','REST');
 yyaxis right
-histogram(fp_mvmt_all,'BinWidth',0.1,'FaceColor','g','FaceAlpha',0.2,'EdgeAlpha',0.5,'Normalization','probability','DisplayName','MOV');
+histogram(fp_mvmt_all,'BinWidth',0.2,'FaceColor','g','FaceAlpha',0.1,'EdgeAlpha',0.5,'Normalization','probability','DisplayName','MOV');
 xlabel('% dF/F'); ylabel('Probability'); grid on; legend; %xlim([0 1]) %xlim([-5 20])
 title(sprintf('%s',beh(1).FPnames{1}))
 %title(sprintf('%s: muREST = %1.3f, muMOV = %1.3f (p = %1.3f)',beh(1).FPnames{1},nanmean(fp_rest_all),nanmean(fp_mvmt_all),ranksum(fp_rest_all,fp_mvmt_all)));
