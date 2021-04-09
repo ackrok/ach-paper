@@ -12,6 +12,7 @@ for x = 1:length(raw)
         prcval = prctile(FPfinal, 1);
         FPfinal = FPfinal - prcval; % Subtract lower 5% of dF/F values
         fpfinal{x,y} = FPfinal;
+        raw(x).fp_prc1(:,y) = FPfinal;
     end
 end
 
@@ -28,7 +29,7 @@ end
 %   (3) filter <10Hz, downsample to 50Hz
 
 lpCut = 10; filtOrder = 8;
-rawFs = 5000; dsRate = 100; dsType = 2;
+rawFs = 2000; dsRate = 40; dsType = 2;
 interpType = 'linear'; fitType = 'interp'; basePrc = 5; winSize = 10; winOv = 0;
 h = waitbar(0,'processFP');
 for x = 3:5
@@ -48,7 +49,7 @@ for x = 3:5
         pk2pk_max = mean(tmp(:,1)); pk2pk_min = mean(tmp(:,2)); % mean pk-min, pk-max across all bins
         FPcrunch = (FPbase - pk2pk_min) ./ (maxmin/adjPk);  % min max normalization: noise is from 0 to 1
         
-        %FPfilt = filterFP(FPcrunch,rawFs,lpCut,filtOrder,'lowpass');
+        FPfilt = filterFP(FPcrunch,rawFs,lpCut,filtOrder,'lowpass');
         FPfinal = downsampleTLab(FPfilt,dsRate,dsType); Fs = rawFs/dsRate;
 
         fpfinal{x,y} = FPfinal;
