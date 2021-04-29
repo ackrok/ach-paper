@@ -11,12 +11,12 @@ for z = 1:length(beh(x).onRest{y})
 end; linkaxes(sp,'y');
 
 %% OVERLAY: rawFP for all rest periods (1x sweep, all rests)
-x = 1; y = 1; dsRate = 40;
-signal = raw(x).fp(:,y); %[beh(x).vel(1,y); diff(movmean(beh(x).vel(:,y),10))]; 
+x = 5; y = 1; dsRate = 40;
+signal = raw(x).rawfp(:,y); %[beh(x).vel(1,y); diff(movmean(beh(x).vel(:,y),10))]; 
 figure; hold on
 for z = 1:length(raw(x).onRest{y})
     %plot(raw(x).rawfp([beh(x).onRest{y}(z)*dsRate:beh(x).offRest{y}(z)*dsRate],y));
-    plot(signal([raw(x).onRest{y}(z):raw(x).offRest{y}(z)])); ylabel('Acceleration (cm/s^2)');
+    plot(signal([raw(x).onRest{y}(z)*dsRate:raw(x).offRest{y}(z)*dsRate])); 
 end
 title(sprintf('%s-swp#%d - rawFP',raw(x).rec,y)); ylabel('Voltage (V)');
 
@@ -49,12 +49,12 @@ end
 x = 1; y = 2;
 
 figure; hold on
-plm = floor(sqrt(length(beh(x).onRest{y}))); pln = ceil(length(beh(x).onRest{y})/plm);
-for z = 1:length(beh(x).onRest{y})
-%     subplot(plm,pln,z);
-%     plot(beh(x).time(beh(x).onRest{y}(z):beh(x).offRest{y}(z)), ...
-%         beh(x).fp([beh(x).onRest{y}(z):beh(x).offRest{y}(z)],y), 'k');
-    plot(raw(x).rawfp([beh(x).onRest{y}(z)*dsRate:beh(x).offRest{y}(z)*dsRate],y))
+plm = floor(sqrt(length(beh(x).onRest))); pln = ceil(length(beh(x).onRest)/plm);
+for z = 1:length(beh(x).onRest)
+    subplot(plm,pln,z);
+    plot(beh(x).time(beh(x).onRest(z):beh(x).offRest(z)), ...
+        beh(x).FP{1}([beh(x).onRest(z):beh(x).offRest(z)]), 'k');
+   % plot(raw(x).rawfp([beh(x).onRest{y}(z)*dsRate:beh(x).offRest{y}(z)*dsRate],y))
 end
 
 %% PLOT: single rest period

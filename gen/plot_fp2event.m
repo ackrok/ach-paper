@@ -35,7 +35,7 @@ if evName == 5
         vel = beh(x).vel; % Extract velocity signal during this mov bout
         vel_sm = fliplr(movmean(fliplr(movmean(vel,10)),10)); % Smooth velocity, flip left-right, smooth again, flip back
         acc = [vel(1); diff(vel_sm)]; % Acceleration vector is diff of smoothed velocity vector
-        [~,locs] = findpeaks(acc,'MinPeakProminence',50,'MinPeakDistance',0.5); % Location of peaks, using findpeaks function
+        [~,locs] = findpeaks(acc,'MinPeakProminence',0.5,'MinPeakDistance',0.5); % Location of peaks, using findpeaks function
         locs = beh(x).time(locs); % Convert peak locations to seconds
         beh(x).acc_locs = locs; clc
     end; clc
@@ -44,7 +44,7 @@ end
 %% Align photometry to acceleration times
 Fs = beh(1).Fs; 
 time = [-5:1/Fs:5]; %CHANGE: window for STA
-align = cell(length(beh),2); nShuff = 10; 
+align = cell(length(beh),length(beh(1).FP)); nShuff = 10; 
 h = waitbar(0, 'STA: signal to acc pks');
 for x = 1:length(beh)
     if all(logical(~rem(beh(x).on,1))); diffFs = 1; else; diffFs = 50; end
@@ -78,7 +78,7 @@ close(h); fprintf('Done aligning photometry to events! \n');
 %% Plot for each recording
 fig = figure; % Figure handle
 plm = floor(sqrt(size(align,1))); pln = ceil(size(align,1)/plm); % Subplot size depending on number of recordings
-clr = {'g','m'};
+clr = {'g','m','b','r'};
 switch evName
     case 1; lbl = 'Movement Onset'; case 2; lbl = 'Rest Onset'; % Asign label based on event time aligning to
     case 3; lbl = 'Movement Offset'; case 4; lbl = 'Rest Offset';
@@ -95,6 +95,7 @@ for x = 1:size(align,1) % Iterate over each recording
     ylabel('FP (z-score)'); grid on; xlim([time(1) time(end)]);
     title(sprintf('%s - %s',beh(x).rec,beh(x).site)); 
 end
-linkaxes(sp,'y'); linkaxes(sp,'x'); % Link x,y axes
+%linkaxes(sp,'y'); 
+linkaxes(sp,'x'); % Link x,y axes
 
 end

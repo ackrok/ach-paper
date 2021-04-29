@@ -32,7 +32,7 @@ lpCut = 10; filtOrder = 8;
 rawFs = 2000; dsRate = 40; dsType = 2;
 interpType = 'linear'; fitType = 'interp'; basePrc = 5; winSize = 10; winOv = 0;
 h = waitbar(0,'processFP');
-for x = 3:5
+for x = 8:10
     for y = 1:size(raw(x).rawfp,2)
         rawFP = raw(x).rawfp(:,y);
         FPbase = baselineFP(rawFP,interpType,fitType,basePrc,winSize,winOv,rawFs);

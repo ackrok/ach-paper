@@ -25,7 +25,6 @@ for x = 1:length(raw)
     b = find(strcmp({beh.rec},raw(x).rec));
     mat(x).rec = beh(b).rec;
     mat(x).FPnames = beh(b).FPnames;
-    mat(x).fp = raw(x).fp(:);
     mat(x).fp_mvmt = []; mat(x).fp_rest = [];
     for y = 1:length(beh(b).on)
 %%         
@@ -80,13 +79,13 @@ title(sprintf('%s',beh(1).FPnames{1}))
 %title(sprintf('%s: muREST = %1.3f, muMOV = %1.3f (p = %1.3f)',beh(1).FPnames{1},nanmean(fp_rest_all),nanmean(fp_mvmt_all),ranksum(fp_rest_all,fp_mvmt_all)));
 
 %% HISTOGRAM: REST WT vs REST KO
-figure; y1 = wt_fprest; y2 = ko_fprest;
+figure; y1 = wt_rest; y2 = ant_rest;
 yyaxis left; ylabel('Probability');
-histogram(y1,'BinWidth',0.1,'FaceColor','k','FaceAlpha',0.2,'EdgeAlpha',0.5,'Normalization','probability','DisplayName','WT');
+histogram(y1,'BinWidth',0.2,'FaceColor','k','FaceAlpha',0.2,'EdgeAlpha',0.5,'Normalization','probability','DisplayName','WT');
 yyaxis right; ylabel('Probability');
-histogram(y2,'BinWidth',0.1,'FaceColor','r','FaceAlpha',0.2,'EdgeAlpha',0.5,'Normalization','probability','DisplayName','ChATcKO');
+histogram(y2,'BinWidth',0.2,'FaceColor','r','FaceAlpha',0.2,'EdgeAlpha',0.5,'Normalization','probability','DisplayName','ChATcKO');
 xlabel('% dF/F'); grid on; legend;
-title(sprintf('dF/F - 25p : muWT = %1.3f, muKO = %1.3f (p = %1.3f)',nanmean(y1),nanmean(y2),ranksum(y1,y2)));
+title(sprintf('ACh dF/F : muWT = %1.3f, muKO = %1.3f (p = %1.3f)',nanmean(y1),nanmean(y2),ranksum(y1,y2)));
 
 
 %% COMPARE PLOT: tdTomato vs ACh
