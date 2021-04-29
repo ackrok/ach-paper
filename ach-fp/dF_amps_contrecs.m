@@ -16,10 +16,10 @@ end; fprintf('Done %s: new rest threshold = 0.25.\n',beh(1).FPnames{1});
 
 %% Extract ACh dF/F values for REST vs MOV
 mat = struct;
-for x = 3:4
+for x = 1:length(beh)
     mat(x).rec = beh(x).rec;
     mat(x).FPnames = beh(x).FPnames;
-    fp = beh(x).FP{3}; % Extract photometry signal for this sweep
+    fp = beh(x).FP{1}; % Extract photometry signal for this sweep
     % fp = raw(x).fp;
     mat(x).fp = fp;
     mat(x).fp_mvmt = []; mat(x).fp_rest = []; % Initialize output vectors for this recording
