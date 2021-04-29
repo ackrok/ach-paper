@@ -1,14 +1,14 @@
 %% (1) Load data
 load('fullcin_Feb21_ACh+DA+PF.mat'); load('beh_wt_ACh+DA+PF.mat')
 %sub = cinwt; beh = behwt;
-sub = cinwt(find(strcmp({cinwt.rec},'IV053_rec03')));
+sub = cinwt(find(strcmp({cinwt.rec},'IV046_rec02')));
 beh = behwt(find(strcmp({behwt.rec},sub(1).rec)));
 
 %% (2) PETH
 gen = struct; 
-%gen.bin = 0.05; gen.window = [-0.075 0.075]; %CHANGE: window for PETH
-gen.bin = 0.02; gen.window = [-0.01 0.01];
-%gen.bin = 0.01; gen.window = [-0.005 0.005];
+gen.bin = 0.05; gen.window = [-0.025 0.025]; %CHANGE: window for PETH
+% gen.bin = 0.02; gen.window = [-0.01 0.01];
+% gen.bin = 0.01; gen.window = [-0.005 0.005];
 
  mat = struct; % Initialize structure
 h = waitbar(0, 'PETH: CIN spikes to FP peak times');
@@ -30,8 +30,8 @@ for x = 1:length(sub)
         cts0(y,:) = peth.cts{y}(t_0,:);
     end  
     %% STA
-%     fp = beh(1).FP{1}; Fs = 50;
-    fp = [beh(1).vel(1); diff(movmean(beh(1).vel,10))]; Fs = 50;
+    fp = beh(1).FP{1}; Fs = 50;
+%    fp = [beh(1).vel(1); diff(movmean(beh(1).vel,10))]; Fs = 50;
     [sta_fp,sta_time] = getSTA(fp, st, Fs, [-1, 1]);
     %% Load into output structure
     mat(x).rec = sub(x).rec; 
@@ -82,21 +82,21 @@ time = peth.time;
 %% PLOT ALL UNITS: STA to synchST
 figure; plm = floor(sqrt(length(mat))); pln = ceil(length(mat)/plm);
 a = cell(2, length(mat)); % a = cell(length(mat),length(mat)); 
-%clr = {'k','m','b','g'}; % clr = {'k','m','c','g'}; % %clr = {'k','r','m','b','c','g'}; %
-clr = {'k','g'};
+clr = {'k','m','b','g'}; % clr = {'k','m','c','g'}; % %clr = {'k','r','m','b','c','g'}; %
+%clr = {'k','g'};
 for x = 1:length(mat)
-    b = mat(x).cts0_mvmt; % CHANGE
+    b = mat(x).cts0; % CHANGE
     b(b > 1) = 1; b = sum(b,1);
-    a{1,x} = find(b == 0); a{2,x} = find(b == max(b)); 
-%     a{1,x} = find(b == 0); a{2,x} = find(b == 1); 
-%     a{3,x} = find(b == 2); a{4,x} = find(b == 3);
-%     a{5,x} = find(b >= 4); %a{6,x} = find(b >= 5);
+%    a{1,x} = find(b == 0); a{2,x} = find(b == max(b)); 
+     a{1,x} = find(b == 0); a{2,x} = find(b == 1); 
+     a{3,x} = find(b == 2); a{4,x} = find(b == 3);
+     %a{5,x} = find(b >= 4); %a{6,x} = find(b >= 5);
     sp(x) = subplot(plm,pln,x); 
-    sig = mat(x).sta_mvmt; % CHANGE
+    sig = mat(x).sta; % CHANGE
     for y = 1:size(a,1)
         shadederrbar(sta_time, nanmean(sig(:,a{y,x}),2), SEM(sig(:,a{y,x}),2), clr{y}); hold on
     end
-    xlabel('Latency to CIN spike (s)'); ylabel('Acceleration'); grid on
+    xlabel('Latency to CIN spike (s)'); ylabel('ACh (dF/F)'); grid on
     title(sprintf('%s-#%d',mat(x).rec,mat(x).n),'Interpreter','none');
 end
 linkaxes(sp,'y');

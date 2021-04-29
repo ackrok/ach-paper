@@ -107,18 +107,18 @@ title(sprintf('CCG rest spikes (n = %d pairs)',size(ccgZ,2)));
 %% PLOT DELTA-FIRING RATE
 figure; 
 sm = 5;
-shadederrbar(time, movmean(nanmean(ccg50,2),sm), movmean(nanmean(ccg95,2),sm), 'k'); hold on
-shadederrbar(time, movmean(nanmean(ccgDelta,2),sm), movmean(SEM(ccgDelta,2),sm), 'b'); 
+shadederrbar(time, movmean(nanmean(ccgDelta_50rest,2),sm), movmean(nanmean(ccgDelta_95rest,2),sm), 'k'); hold on
+shadederrbar(time, movmean(nanmean(ccgDelta_rest,2),sm), movmean(SEM(ccgDelta_rest,2),sm), 'b'); 
 xlabel('Lag (s)'); ylabel('CCG (deltaFR)'); xlim([-1 1]); grid on; 
 title(sprintf('CCG spikes (n = %d pairs)',size(ccgDelta,2)));
 
-figure; violinplot(max(ccgDelta,[],1)); xlim([0.6 1.4]); ylim([-0.1 1.5]);
+figure; violinplot(max(ccgDelta_rest,[],1)); xlim([0.6 1.4]); ylim([-0.1 1.5]);
 ylabel('Max deltaFR'); grid on
-title(sprintf('Max deltaFR (n = %d pairs)',length(max(ccgDelta,[],1))));
+title(sprintf('Max deltaFR (n = %d pairs)',length(max(ccgDelta_rest,[],1))));
 
 %% PLOT versus DISTANCE
 x_var = [mat.dist]'; %x_var = [mat.fr]';
-max_ccg = max(ccgDelta,[],1)';
+max_ccg = max(ccgDelta_rest,[],1)';
 %%
 tbl = table(x_var,max_ccg,'VariableNames',{'dist','maxCCG'}); %Create a table
 mdl = fitlm(tbl,'maxCCG ~ dist'); %Fit a linear regression model with max(CCG) as response variable, unitDistance as predictor variable
@@ -142,7 +142,7 @@ xlim([-50 1150]);
 above95 = []; below5 = [];
 for x = 1:length(mat)
     for y = 1:size(mat(x).ccg,2)
-        a = mat(x).ccg(:,y); b = mat(x).shuffPrc{y};
+        a = mat(x).ccg_rest(:,y); b = mat(x).shuffPrc_rest{y};
         above95 = [above95, a > b(:,3)]; %binary vector where CCG passed 95% confidence interval
         below5 = [below5, a < b(:,1)]; %binary vector where CCG below 5% confidence interval
     end
@@ -150,7 +150,7 @@ end
 
 figure; hold on
 bar(time, 100*sum(above95,2)/size(above95,2),'FaceColor','b','FaceAlpha',0.5);
-bar(time, -100*sum(below5,2)/size(below5,2),'FaceColor','b','FaceAlpha',0.5);
+%bar(time, -100*sum(below5,2)/size(below5,2),'FaceColor','b','FaceAlpha',0.5);
 xlabel('Lag (s)'); ylabel('Prop of Pair CCG > 95% CI (%)');
 title(sprintf('Proportion of pair CCGs > 95p CI (n = %d pairs)',size(above95,2)))
 
@@ -159,8 +159,8 @@ x = 21; a = [12,23]; sm = 5;
 fig = figure; fig.Position(3) = 1000;
 for b = 1:2
     sp(b) = subplot(1,2,b); y = a(b);
-    shadederrbar(ccgst.lag, movmean(mat(x).shuffPrc_rest{y}(:,2),sm), movmean(mat(x).shuffPrc_rest{y}(:,3)-mat(x).shuffPrc_rest{y}(:,2),sm), 'k'); hold on
-    plot(ccgst.lag, movmean(mat(x).ccg_rest(:,y),5),'b');
+    shadederrbar(time, movmean(mat(x).shuffPrc_rest{y}(:,2),sm), movmean(mat(x).shuffPrc_rest{y}(:,3)-mat(x).shuffPrc_rest{y}(:,2),sm), 'k'); hold on
+    plot(time, movmean(mat(x).ccg_rest(:,y),5),'b');
     xlabel('Lag (s)'); ylabel('CCG (Firing Rate)'); xlim([-1 1]); grid on; ylim([3.5 7]);
     title(sprintf('IV069-rec01: run(#6)||ref(#%d)',b*2));
 end
@@ -169,7 +169,7 @@ fig = figure; fig.Position(3) = 1000;
 for b = 1:2
     sp(b) = subplot(1,2,b); y = a(b);
     tmp = (mat(x).ccg_rest(:,y) - mat(x).fr_rest(y))./mat(x).fr_rest(y);
-    plot(ccgst.lag, movmean(tmp,5),'b');
+    plot(time, movmean(tmp,5),'b');
     xlabel('Lag (s)'); ylabel('CCG (delta FiringRate)'); xlim([-1 1]); grid on; ylim([-0.25 0.5]);
     title(sprintf('IV069-rec01: run(#6)||ref(#%d)',b*2));
 end
@@ -178,16 +178,16 @@ end
 x = 21; a = [106:141];
 
 figure;
-shadederrbar(ccgst.lag, nanmean(ccgDelta_50(:,a),2), nanmean(ccgDelta_95(:,a),2), 'k'); hold on
-%shadederrbar(ccgst.lag, nanmean(ccgDelta_rest(:,a),2), SEM(ccgDelta_rest(:,a),2), 'b');
-plot(ccgst.lag, ccgDelta(:,a), ':b');
+shadederrbar(time, nanmean(ccgDelta_50rest(:,a),2), nanmean(ccgDelta_95rest(:,a),2), 'k'); hold on
+%shadederrbar(time, nanmean(ccgDelta_rest(:,a),2), SEM(ccgDelta_rest(:,a),2), 'b');
+plot(time, ccgDelta(:,a), ':b');
 xlabel('Lag (s)'); ylabel('CCG (deltaFR)'); xlim([-1 1]); grid on; 
 title('IV069-rec01: CCG rest spikes (n = 36 pairs)');
 
 x_var = [mat(x).dist]';
 max_ccg = max(ccgDelta(:,a),[],1)';
 figure; hold on
-plot(x_hat,nanmean(nanmean(ccgDelta_95(:,a)))*ones(length(x_hat),1),'--k'); %Dashed line for 95% confidence interval
+plot(x_hat,nanmean(nanmean(ccgDelta_95rest(:,a)))*ones(length(x_hat),1),'--k'); %Dashed line for 95% confidence interval
 plot(x_var, max_ccg,'.b','MarkerSize',10);
 xlabel('Unit Distance (um)'); ylabel('Max CCG rest spikes (z-score)'); 
 xlim([-50 1150]); 

@@ -80,13 +80,13 @@ end; % linkaxes(sp,'y');
 %% adjust x-axis to be 0-100% units
 fpStratNorm_all = []; fpStratNorm_rand = [];
 for x = 1:length(mat)
-    fpStratNorm_all(x,1) = mat(x).fpStratNorm(1,1);
-    fpStratNorm_all(x,2) = mat(x).fpStratNorm(2,1);
-    fpStratNorm_all(x,3) = mat(x).fpStratNorm(end,1);
+    fpStratNorm_all(x,1) = mat(x).fPstratNorm(1,1);
+    fpStratNorm_all(x,2) = mat(x).fPstratNorm(2,1);
+    fpStratNorm_all(x,3) = mat(x).fPstratNorm(end,1);
     
-    fpStratNorm_rand(x,1) = mat(x).fpStratNorm(1,2);
-    fpStratNorm_rand(x,2) = mat(x).fpStratNorm(2,2);
-    fpStratNorm_rand(x,3) = mat(x).fpStratNorm(end,2);
+    fpStratNorm_rand(x,1) = mat(x).fPstratNorm(1,2);
+    fpStratNorm_rand(x,2) = mat(x).fPstratNorm(2,2);
+    fpStratNorm_rand(x,3) = mat(x).fPstratNorm(end,2);
 end
 figure;
 shadederrbar([0:2], nanmean(fpStratNorm_rand,1), SEM(fpStratNorm_rand,1), 'k'); hold on
