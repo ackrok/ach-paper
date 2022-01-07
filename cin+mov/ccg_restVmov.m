@@ -51,6 +51,7 @@ end
 %% EXTRACT FROM MAT
 ccgZ_mov = []; 
 ccgDelta_mov = []; ccgDelta_95mov = []; ccgDelta_50mov = [];
+ccgDelta_rest = []; ccgDelta_rest95 = []; ccgDelta_rest50 = [];
 
 for x = 1:length(mat)
     if isempty(mat(x).ccgZ_mvmt); continue; end
@@ -63,6 +64,13 @@ for x = 1:length(mat)
         tmp_50 = (mat(x).shuffPrc_mvmt{y}(:,2) - mat(x).fr_mvmt(y))./mat(x).fr_mvmt(y);
         ccgDelta_95mov = [ccgDelta_95mov, tmp_95];
         ccgDelta_50mov = [ccgDelta_50mov, tmp_50];
+        
+        tmp = (mat(x).ccg_rest(:,y) - mat(x).fr_rest(y))./mat(x).fr_rest(y); %deltaFR = (rate - mu(rate))/mu(rate)
+        ccgDelta_rest = [ccgDelta_rest, tmp];
+        tmp_95 = (mat(x).shuffPrc_rest{y}(:,3) - mat(x).fr_rest(y))./mat(x).fr_rest(y); 
+        tmp_50 = (mat(x).shuffPrc_rest{y}(:,2) - mat(x).fr_rest(y))./mat(x).fr_rest(y);
+        ccgDelta_rest95 = [ccgDelta_rest95, tmp_95];
+        ccgDelta_rest50 = [ccgDelta_rest50, tmp_50];
     end
 end
 
@@ -74,18 +82,18 @@ for x = 1:length(mat)
 linkaxes(sp,'y');
 
 figure; 
-shadederrbar(ccgst.lag, nanmean(ccgZ_mov,2), SEM(ccgZ_mov,2), 'b'); 
+shadederrbar(time, nanmean(ccgZ_mov,2), SEM(ccgZ_mov,2), 'b'); 
 xlabel('Lag (s)'); ylabel('CCG (z-score)'); xlim([-1 1]); grid on; 
 title(sprintf('CCG mvmt spikes (n = %d pairs)',size(ccgZ_mov,2)));
 
 %% PLOT DELTA-FIRING RATE
 figure; hold on
-%shadederrbar(ccgst.lag, nanmean(ccgDelta_rest50,2), nanmean(ccgDelta_rest95,2), 'r'); hold on
-%shadederrbar(ccgst.lag, nanmean(ccgDelta_50mov,2), nanmean(ccgDelta_95mov,2), 'g'); hold on
-plot(ccgst.lag, nanmean(ccgDelta_rest95,2), '--r'); plot(ccgst.lag, nanmean(ccgDelta_95mov,2), '--g');
-plot(ccgst.lag, zeros(length(ccgst.lag),1), ':k');
-shadederrbar(ccgst.lag, nanmean(ccgDelta_rest,2), SEM(ccgDelta_rest,2), 'r'); 
-shadederrbar(ccgst.lag, nanmean(ccgDelta_mov,2), SEM(ccgDelta_mov,2), 'g'); 
+shadederrbar(time, nanmean(ccgDelta_50mov,2), nanmean(ccgDelta_95mov,2), 'g'); hold on
+shadederrbar(time, nanmean(ccgDelta_rest50,2), nanmean(ccgDelta_rest95,2), 'r'); hold on
+% plot(time, nanmean(ccgDelta_rest95,2), '--r'); plot(time, nanmean(ccgDelta_95mov,2), '--g'); plot(time, zeros(length(time),1), ':k');
+
+shadederrbar(time, nanmean(ccgDelta_rest,2), SEM(ccgDelta_rest,2), 'r'); 
+shadederrbar(time, nanmean(ccgDelta_mov,2), SEM(ccgDelta_mov,2), 'g'); 
 xlabel('Lag (s)'); ylabel('CCG (deltaFR)'); xlim([-1 1]); grid on; 
 title(sprintf('CCG mvmt vs rest spikes (n = %d pairs)',size(ccgDelta_mov,2)));
 
@@ -105,10 +113,10 @@ for x = 1:length(mat)
 end
 
 figure; hold on
-bar(ccgst.lag, 100*sum(above95_rest,2)/size(above95_rest,2),'FaceColor','r','FaceAlpha',0.5,'DisplayName','REST');
-bar(ccgst.lag, 100*sum(above95_mov,2)/size(above95_mov,2),'FaceColor','g','FaceAlpha',0.5,'DisplayName','MOV');
+bar(time, 100*sum(above95_rest,2)/size(above95_rest,2),'FaceColor','r','FaceAlpha',0.5,'DisplayName','REST');
+bar(time, 100*sum(above95_mov,2)/size(above95_mov,2),'FaceColor','g','FaceAlpha',0.5,'DisplayName','MOV');
 xlabel('Lag (s)'); ylabel('Prop of Pair CCG > 95% CI (%)'); legend
-title(sprintf('Proportion of pair CCGs > 95p CI (n = %d pairs)',size(above95,2)))
+title(sprintf('Proportion of pair CCGs > 95p CI (n = %d pairs)',size(above95_rest,2)))
 
 %% PLOT versus DISTANCE
 unitdist = [mat.dist]';
@@ -137,8 +145,8 @@ x = 21; a = [12,23]; sm = 5;
 fig = figure; fig.Position(3) = 1000;
 for b = 1:2
     sp(b) = subplot(1,2,b); y = a(b);
-    shadederrbar(ccgst.lag, movmean(mat(x).shuffPrc_mvmt{y}(:,2),sm), movmean(mat(x).shuffPrc_mvmt{y}(:,3)-mat(x).shuffPrc_mvmt{y}(:,2),sm), 'k'); hold on
-    plot(ccgst.lag, movmean(mat(x).ccg_mvmt(:,y),5),'b');
+    shadederrbar(time, movmean(mat(x).shuffPrc_mvmt{y}(:,2),sm), movmean(mat(x).shuffPrc_mvmt{y}(:,3)-mat(x).shuffPrc_mvmt{y}(:,2),sm), 'k'); hold on
+    plot(time, movmean(mat(x).ccg_mvmt(:,y),5),'b');
     xlabel('Lag (s)'); ylabel('CCG (Firing Rate)'); xlim([-1 1]); grid on; ylim([3.5 7]);
     title(sprintf('IV069-rec01: run(#6)||ref(#%d)',b*2));
 end
@@ -147,7 +155,7 @@ fig = figure; fig.Position(3) = 1000;
 for b = 1:2
     sp(b) = subplot(1,2,b); y = a(b);
     tmp = (mat(x).ccg_mvmt(:,y) - mat(x).fr_mvmt(y))./mat(x).fr_mvmt(y);
-    plot(ccgst.lag, movmean(tmp,5),'b');
+    plot(time, movmean(tmp,5),'b');
     xlabel('Lag (s)'); ylabel('CCG (delta FiringRate)'); xlim([-1 1]); grid on; ylim([-0.25 0.5]);
     title(sprintf('IV069-rec01: run(#6)||ref(#%d)',b*2));
 end
@@ -155,9 +163,9 @@ end
 %% PLOT IV069_rec01 ONLY
 x = 21; a = [106:141];
 figure;
-shadederrbar(ccgst.lag, nanmean(ccgDelta_50mov(:,a),2), nanmean(ccgDelta_95mov(:,a),2), 'k'); hold on
-%shadederrbar(ccgst.lag, nanmean(ccgDelta_rest(:,a),2), SEM(ccgDelta_rest(:,a),2), 'b');
-plot(ccgst.lag, ccgDelta_mov(:,a), ':b');
+shadederrbar(time, nanmean(ccgDelta_50mov(:,a),2), nanmean(ccgDelta_95mov(:,a),2), 'k'); hold on
+%shadederrbar(time, nanmean(ccgDelta_rest(:,a),2), SEM(ccgDelta_rest(:,a),2), 'b');
+plot(time, ccgDelta_mov(:,a), ':b');
 xlabel('Lag (s)'); ylabel('CCG (deltaFR)'); xlim([-1 1]); grid on; 
 title('IV069-rec01: CCG mvmt spikes (n = 36 pairs)');
 
