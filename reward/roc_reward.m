@@ -1,4 +1,4 @@
-thresholds = [-5:0.1:2]; % Low Thresholds to test: -5 to +2 dF/F
+thresholds = [-5:0.1:1]; % Low Thresholds to test: -5 to +2 dF/F
 % thresholds = [2:1:30]; % High Thresholds to test: +10 to +30dF/F
 
 tpr = []; fpr = []; % Initialize output matrix for True-Positive and False-Positive Rates
@@ -6,7 +6,7 @@ tpr = []; fpr = []; % Initialize output matrix for True-Positive and False-Posit
 for x = 1:length(beh)
 %%
 tic
-fp = beh(x).FP{1}(1:round(beh(x).reward+beh(x).Fs,-1)); % Extract photometry signal from data structure
+fp = beh(x).FP{1}; %(1:round(beh(x).reward+beh(x).Fs,-1)); % Extract photometry signal from data structure
 ev = beh(x).reward; % Extract reward delivery times from data structure
 bin = beh(x).Fs/50; % Set bin size
 nBins = length(fp)/bin; % Total number of bins
