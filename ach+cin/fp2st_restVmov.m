@@ -1,7 +1,7 @@
 %% (1) Load data
 load('fullcin_Feb21_ACh+DA+PF.mat')
 load('beh_wt_ACh+DA+PF.mat')
-sub = cinwt([1:19, 30:36, 63:73]);  % Extract CINs from recordings with ACh
+sub = cinwt([1:4, 9:19, 30:36, 63:73]);  % Extract CINs from recordings with ACh
 beh = behwt([1:19]); % Extract ACh recordings
 
 %%
@@ -27,16 +27,16 @@ for x = 1:length(sub)
     if isempty(idx) || isempty(sub(x).burst); continue; end
 
     %% Select event times and signal to align to
-    %st = sub(x).st; % Aligning to spike times
-    st = sub(x).burst.Windows(:,1); % Aligning to burst onset times
+    st = sub(x).st; % Aligning to spike times
     
-    %sig = [beh(idx).vel(1); diff(movmean(beh(idx).vel,10))]; % Aligning acceleration signal
+    %sig = [beh(idx).vel(1); diff(movmean(beh(idx).vel,10))];Â % Aligning acceleration signal
     sig = beh(idx).FP{1}; % Aliging photometry signal
     
     %% Extract event times during rest & movement
     st_sub = cell(1,2); st_sub_forShuff = cell(1,2);
-    st_sub{1} = extractEventST(st, beh(idx).on/Fs, beh(idx).off/Fs, 0); % Event times during movement
-    st_sub{2} = extractEventST(st, beh(idx).onRest/Fs, beh(idx).offRest/Fs, 0); % Event times during rest
+    st_sub{1} = extractEventST(st, beh(idx).on/Fs, beh(idx).off/Fs, 1); % Event times during movement
+    st_sub{2} = extractEventST(st, beh(idx).onRest/Fs, beh(idx).offRest/Fs, 1); % Event times during rest
+    st_sub{3} = st; % Event times during rest
     st_sub_forShuff{1} = extractEventST(st, beh(idx).on/Fs, beh(idx).off/Fs, 1); % Event times during movement
     st_sub_forShuff{2} = extractEventST(st, beh(idx).onRest/Fs, beh(idx).offRest/Fs, 1); % Event times during rest
     
@@ -58,6 +58,7 @@ for x = 1:length(sub)
     end
     %% Load into output structure
     mat(x).rec = sub(x).rec; mat(x).n = sub(x).n; mat(x).FPnames{1} = beh(idx).FPnames{1};
+    mat(x).sta = sta_raw{3};
     mat(x).sta_mvmt = sta_raw{1}; mat(x).sta_rest = sta_raw{2};
     mat(x).staZ_mvmt = sta_z{1}; mat(x).staZ_rest = sta_z{2};
     mat(x).shuff_mvmt = sta_shuff{1}; mat(x).shuff_rest = sta_shuff{2};
@@ -68,9 +69,10 @@ close(h); fprintf('Done: aligning photometry to CIN burst onsets \n');
 if isempty(mat(10).n); mat(10) = []; end
 
 %% (3) Extract from output structure
-sta_mvmt = []; sta_rest = [];
+sta_mvmt = []; sta_rest = []; sta_full = [];
 staZ_mvmt = []; staZ_rest = []; shuff_mvmt = []; shuff_rest = [];
 for x = 1:length(mat)
+    sta_full = [sta_full, nanmean(mat(x).sta,2)];
     sta_mvmt = [sta_mvmt, nanmean(mat(x).sta_mvmt,2)]; sta_rest = [sta_rest, nanmean(mat(x).sta_rest,2)];
     staZ_mvmt = [staZ_mvmt, nanmean(mat(x).staZ_mvmt,2)]; staZ_rest = [staZ_rest, nanmean(mat(x).staZ_rest,2)];
 %     shuff_mvmt = [shuff_mvmt, (nanmean(mat(x).shuff_mvmt,2) - nanmean(mat(x).shuff_mvmt(:)))./nanstd(mat(x).shuff_mvmt(:))];
@@ -81,12 +83,13 @@ end
 figure;
 %shadederrbar(time, nanmean(shuff_mvmt,2), SEM(shuff_mvmt,2), 'k'); 
 %shadederrbar(time, nanmean(shuff_rest,2), SEM(shuff_rest,2), 'k'); 
-shadederrbar(time, nanmean(staZ_rest,2), SEM(staZ_rest,2), 'r'); hold on
-shadederrbar(time, nanmean(staZ_mvmt,2), SEM(staZ_mvmt,2), 'g'); ylabel('ACh Fluorescence (z-score)');
+% shadederrbar(time, nanmean(staZ_rest,2), SEM(staZ_rest,2), 'r'); hold on
+% shadederrbar(time, nanmean(staZ_mvmt,2), SEM(staZ_mvmt,2), 'g'); ylabel('ACh Fluorescence (z-score)');
 % shadederrbar(time, nanmean(sta_rest,2), SEM(sta_rest,2), 'r'); hold on
 % shadederrbar(time, nanmean(sta_mvmt,2), SEM(sta_mvmt,2), 'g'); ylabel('ACh Fluorescence (dF/F)');
-xlabel('Latency to CIN burst (s)'); grid on; 
-title(sprintf('Photometry aligned to CIN burst (n = %d units)',length(mat)));
+shadederrbar(time, nanmean(sta_full,2), SEM(sta_full,2), 'g'); ylabel('ACh Fluorescence (dF/F)');
+xlabel('Latency to CIN st (s)'); grid on; 
+title(sprintf('Photometry aligned to CIN st (n = %d units)',length(mat)));
 
 %% (5) delta MOV vs REST change from t = 0
 val_pkAdj = []; t_0 = find(time == 0);
@@ -105,8 +108,9 @@ fig = figure; plm = floor(sqrt(length(mat))); pln = ceil(length(mat)/plm);
 for x = 1:length(mat)
     if isempty(mat(x).sta_mvmt); continue; end
     sp(x) = subplot(plm,pln,x); 
-    shadederrbar(time, nanmean(mat(x).sta_mvmt,2), SEM(mat(x).sta_mvmt,2), 'g'); hold on
-    shadederrbar(time, nanmean(mat(x).sta_rest,2), SEM(mat(x).sta_rest,2), 'r');
+    % shadederrbar(time, nanmean(mat(x).sta_mvmt,2), SEM(mat(x).sta_mvmt,2), 'g'); hold on
+    % shadederrbar(time, nanmean(mat(x).sta_rest,2), SEM(mat(x).sta_rest,2), 'r');
+    shadederrbar(time, nanmean(mat(x).sta,2), SEM(mat(x).sta,2), 'g');
     title(sprintf('%s-%d',mat(x).rec, mat(x).n));
 end
 
