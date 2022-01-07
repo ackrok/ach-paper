@@ -3,37 +3,32 @@ beh = behwt(10:12); sub = cinwt(20:29); %DMS recordings
 beh = behwt([1:9,13:28,36:40]); sub = cinwt([1:19,30:98]); %DLS recordings
 
 %% Extract Peaks
-if all(logical(~rem(beh(1).on,1))); diffFs = 1; else; diffFs = 50; end
 for x = 1:length(beh)
-	locs = [];
-	for y = 1:length(beh(x).on)
-        vel_seg = beh(x).vel(diffFs*beh(x).on(y):diffFs*beh(x).off(y));
-        acc_seg = [vel_seg(1); diff(movmean(vel_seg,10))];
-        [~,locs_seg] = findpeaks(acc_seg,'MinPeakProminence',0.5,'MinPeakDistance',1);
-        time_seg = beh(x).time(diffFs*beh(x).on(y):diffFs*beh(x).off(y));
-        locs_seg = time_seg(locs_seg);
-        locs = [locs; locs_seg(:)];
-    end
+    vel = beh(x).vel;
+    vel_2 = fliplr(movmean(fliplr(movmean(vel,10)),10));
+    acc = [vel(1); diff(vel_2)]; 
+    [~,locs] = findpeaks(acc,'MinPeakProminence',1,'MinPeakDistance',1);
+    locs = beh(x).time(locs);
 	beh(x).acc_locs = locs; clc
 end; clc
 
 %% Align CIN spikes to acceleration peaks
 mat = struct; % Initialize output structure
-gen = struct; gen.bin = 0.01; gen.window = [-1 1]; nShuff = 10; %CHANGE: window for PETH 
+Fs = 50; bin = 0.01; window = [-1 1]; nShuff = 10; %CHANGE: window for PETH 
 h = waitbar(0, 'PETH: CIN spikes to acceleration peaks');
 for x = 1:length(beh)
     idx = find(strcmp({sub.rec},beh(x).rec)); % Find matching units from beh recording
     if isempty(idx); continue; end
     st = {sub(idx).st}; % Unit spike times
     events = beh(x).acc_locs; % Acceleration peaks
-    peth = getClusterPETH(st,events,gen); % PETH: CIN spikes to acc peaks
+    peth = getClusterPETH(st,events,bin,window); % PETH: CIN spikes to acc peaks
     tmp_peth = peth.fr;
     tmpZ = []; tmp50 = []; tmp95 = []; fr = [];
     for y = 1:length(st)
         % st_new = shuffleST(st{y},nShuff);
         % st_new = shiftST(st{y},nShuff,1000/nShuff); 
         st_new = poissonSpikeGen(sub(idx(y)).fr, beh(x).time(end), nShuff);
-        peth = getClusterPETH(st_new,events,gen);
+        peth = getClusterPETH(st_new,events,bin,window);
         mu = nanmean(peth.fr(:)); sigma = nanstd(peth.fr(:)); % mean, sigma of shuffled PETH
         tmpZ(:,y) = (tmp_peth(:,y) - mu)./sigma;
         tmpPrc = prctile(peth.fr,[5 50 95],2); %5th, 50th, 95th percentile of shuffled PETH
