@@ -19,33 +19,34 @@ for idx_b = 1:length(beh)
 end
 
 %% (2) PETH
-Fs = 50; nShuff = 10; 
-peth_gen = struct; peth_gen.bin = 0.02; peth_gen.window = [-1 1]; %CHANGE: window for PETH
+Fs = 50; nShuff = 5; 
+bin = 0.02; window = [-1 1]; %CHANGE: window for PETH
 peakProm = 0.1; peakDist = 0.5; % Parameters for FP peaks
 
 mat = struct; % Initialize structure
-h = waitbar(0, 'PETH: CIN spikes to FP peak times');
+h = waitbar(0, 'PETH: CIN spikes to FP peak times'); fprintf('Running ... ');
 for x = 1:length(beh)
+    fprintf('%s',beh(x).rec);
     % Extract spike times
     idx = find(strcmp({sub.rec},beh(x).rec));
     if isempty(idx); continue; end
     st = {sub(idx).st}; % Extract spike times of units from this recording
     fr = []; % Compute unit firing rate during movement and rest
     for y = 1:length(idx)
-        fr(y,1) = 1/mean(diff(extractEventST(st{y},beh(x).on/Fs,beh(x).off/Fs,1))); % Event times during movement
-        fr(y,2) = 1/mean(diff(extractEventST(st{y},beh(x).onRest/Fs,beh(x).offRest/Fs,1))); % Event times during rest
+        fr(y,1) = 1/mean(diff(extractEventST(st{y},beh(x).on/Fs,beh(x).off/Fs,0))); % Event times during movement
+        fr(y,2) = 1/mean(diff(extractEventST(st{y},beh(x).onRest/Fs,beh(x).offRest/Fs,0))); % Event times during rest
         fr(y,3) = 1/mean(diff(st{y}));
     end
     
     % Compute fp peaks
     fp = beh(x).FP{1}; fp_norm = (fp - min(fp)) / (max(fp) - min(fp)); % Min Max Normalization
-    [pks,locs] = findpeaks(fp_norm,'MinPeakProminence',peakProm,'MinPeakDistance',peakDist); 
+    [~,locs] = findpeaks(fp_norm,'MinPeakProminence',peakProm,'MinPeakDistance',peakDist); 
     locs = beh(x).time(locs); %location of peaks from time signal
 
     % Extract event times during rest & movement
     ev_sub = cell(1,3); %ev_sub_forShuff = cell(1,2);
-    ev_sub{1} = extractEventST(locs, beh(x).on/Fs, beh(x).off/Fs, 0); % Event times during movement
-    ev_sub{2} = extractEventST(locs, beh(x).onRest/Fs, beh(x).offRest/Fs, 0); % Event times during rest
+    ev_sub{1} = extractEventST(locs, beh(x).on/Fs, beh(x).off/Fs, 1); % Event times during movement
+    ev_sub{2} = extractEventST(locs, beh(x).onRest/Fs, beh(x).offRest/Fs, 1); % Event times during rest
     ev_sub{3} = locs;
 %     ev_sub_forShuff{1} = extractEventST(locs, beh(x).on/Fs, beh(x).off/Fs, 1); % Event times during movement
 %     ev_sub_forShuff{2} = extractEventST(locs, beh(x).onRest/Fs, beh(x).offRest/Fs, 1); % Event times during rest
@@ -55,12 +56,12 @@ for x = 1:length(beh)
     alignZ = cell(1,length(ev_sub)); shuff95 = alignZ; shuff50 = alignZ;
     for z = 1:length(ev_sub)
         if isempty(ev_sub{z}); continue; end
-        peth = getClusterPETH(st, ev_sub{z}, peth_gen); % PETH: spike times aligned to fp peaks
+        peth = getClusterPETH(st, ev_sub{z}, bin, window); % PETH: spike times aligned to fp peaks
         align{z} = peth.fr;
         for y = 1:length(idx)
             alignDelta{z} = [alignDelta{z}, (peth.fr(:,y)-fr(y,z))./fr(y,z)]; % Delta firing rate change
             stShuff = shuffleST(st{y}, nShuff);
-            peth_shuff = getClusterPETH(stShuff, ev_sub{z}, peth_gen); %PETH: shuffled spike times aligned to fp peaks
+            peth_shuff = getClusterPETH(stShuff, ev_sub{z}, bin, window); %PETH: shuffled spike times aligned to fp peaks
             mu = nanmean(nanmean(peth_shuff.fr,2)); sigma = nanmean(nanstd(peth_shuff.fr,[], 2)); 
             tmp_z = (peth.fr(:,y) - mu)./sigma; % z-score signal using shuffled mu, sigma
             alignZ{z} = [alignZ{z}, tmp_z]; % add to matrix
@@ -74,7 +75,7 @@ for x = 1:length(beh)
     sta_fp = cell(1,length(ev_sub));
     for z = 1:length(ev_sub)
         if isempty(ev_sub{z}); continue; end
-        sta_fp{z} = getSTA(sig, ev_sub{z}, Fs, [peth_gen.window(1), peth_gen.window(2)]); % Align photometry to FP peaks
+        sta_fp{z} = getSTA(sig, ev_sub{z}, Fs, [window(1), window(2)]); % Align photometry to FP peaks
     end
     
     % Load into output structure
@@ -85,13 +86,14 @@ for x = 1:length(beh)
     mat(x).shuff50_mvmt = shuff50{1}; mat(x).shuff50_rest = shuff50{2}; mat(x).shuff50_full = shuff50{3};
     mat(x).shuff95_mvmt = shuff95{1}; mat(x).shuff95_rest = shuff95{2}; mat(x).shuff95_full = shuff95{3};
     mat(x).sta_mvmt = sta_fp{1}; mat(x).sta_rest = sta_fp{2}; mat(x).sta_full = sta_fp{3};
-    waitbar(x/length(beh),h);
+    waitbar(x/length(beh),h); fprintf(' ... ');
 end
-close(h); fprintf('Done: aligning spikes to ACh fp events \n');
+close(h); fprintf('\n Done: aligning spikes to ACh fp events \n');
 time = peth.time; 
 
 %% (3) Extract from output structure
-align_mvmt = []; align_rest = []; alignDelta_mvmt = []; alignDelta_rest = []; 
+align_mvmt = []; align_rest = []; a
+lignDelta_mvmt = []; alignDelta_rest = []; alignDelta_full = [];
 %alignZ_mvmt = []; alignZ_rest = []; 
 shuff50_rest = []; shuff95_rest = [];
 for x = 1:length(mat)
@@ -100,6 +102,7 @@ for x = 1:length(mat)
     align_rest = [align_rest, mat(x).align_rest];
     alignDelta_mvmt = [alignDelta_mvmt, mat(x).alignDelta_mvmt]; 
     alignDelta_rest = [alignDelta_rest, mat(x).alignDelta_rest];
+    alignDelta_full = [alignDelta_full, mat(x).alignDelta_full];
 %     alignZ_mvmt = [alignZ_mvmt, mat(x).alignZ_mvmt];
 %     alignZ_rest = [alignZ_rest, mat(x).alignZ_rest];
     shuff95_rest = [shuff95_rest, mat(x).shuff95_rest];
@@ -112,9 +115,11 @@ figure;
 % shadederrbar(time, nanmean(align_mvmt,2), SEM(align_mvmt,2), 'g'); ylabel('CIN Firing Rate (Hz)');
 % shadederrbar(time, nanmean(alignZ_rest,2), SEM(alignZ_rest,2), 'r'); hold on
 % shadederrbar(time, nanmean(alignZ_mvmt,2), SEM(alignZ_mvmt,2), 'g'); ylabel('CIN Firing Rate (z-score)');
-shadederrbar(time, nanmean(alignDelta_rest,2), SEM(alignDelta_rest,2), 'r'); hold on
+% shadederrbar(time, nanmean(alignDelta_rest,2), SEM(alignDelta_rest,2), 'r'); hold on
 shadederrbar(time, nanmean(alignDelta_mvmt,2), SEM(alignDelta_mvmt,2), 'g'); ylabel('CIN Firing Rate (deltaFR)');
 %shadederrbar(time, movmean(nanmean(alignDelta_rest(:,[5:end]),2),5), movmean(SEM(alignDelta_rest(:,[5:end]),2),5), 'b'); ylabel('CIN Firing Rate (deltaFR)');
+
+% shadederrbar(time, nanmean(alignDelta_full,2), SEM(alignDelta_full,2), 'k'); ylabel('pMSN Firing Rate (deltaFR)');
 
 xlabel('Latency to ACh Peak (s)'); grid on; 
 title(sprintf('CIN spikes aligned to rest ACh Peaks (n = %d units)',size(align_rest,2)));
@@ -129,8 +134,9 @@ shadederrbar(time, movmean(mat(x).shuff50_rest(:,2),sm), movmean(mat(x).shuff95_
 plot(time, movmean(mat(x).align_rest(:,2),sm), 'b','LineWidth',2); ylabel('CIN Firing Rate (Hz)');
 xlabel('Latency to ACh Peak (s)'); 
 title(sprintf('%s: CIN #%d - spikes aligned to rest ACh peaks',mat(x).rec,mat(x).n(2)));
+
 %% (5b) Representative TRACE
-load('beh_wt_ACh+DA+PF.mat')
+% load('beh_wt_ACh+DA+PF.mat')
 beh = behwt([1:19]); % Extract ACh recordings
 idx_b = find(strcmp({beh.rec},'IV043_rec02'));
 fp = beh(idx_b).FP{1}; fp_norm = (fp - min(fp)) / (max(fp) - min(fp)); % Min Max Normalization
@@ -163,10 +169,18 @@ end
 %% (6b) PETH: CIN activity to ACh peaks -- DMS vs DLS
 figure; hold on
 
-plot(time, movmean(nanmean(shuff95_DLS-shuff50_DLS,2),5), 'b');
-plot(time, movmean(nanmean(shuff95_DMS-shuff50_DMS,2),5), 'k');
-plot(time, -1*movmean(nanmean(shuff95_DLS-shuff50_DLS,2),5), 'b');
-plot(time, -1*movmean(nanmean(shuff95_DMS-shuff50_DMS,2),5), 'k');
+% plot(time, movmean(nanmean(shuff95_DLS-shuff50_DLS,2),5), 'b');
+% plot(time, movmean(nanmean(shuff95_DMS-shuff50_DMS,2),5), 'k');
+% plot(time, -1*movmean(nanmean(shuff95_DLS-shuff50_DLS,2),5), 'b');
+% plot(time, -1*movmean(nanmean(shuff95_DMS-shuff50_DMS,2),5), 'k');
+xpatch = [time',fliplr(time')];
+ypatch_dls = [movmean(nanmean(shuff95_DLS-shuff50_DLS,2),5)', fliplr(-1*movmean(nanmean(shuff95_DLS-shuff50_DLS,2),5))'];
+ypatch_dms = [movmean(nanmean(shuff95_DMS-shuff50_DMS,2),5)', fliplr(-1*movmean(nanmean(shuff95_DMS-shuff50_DMS,2),5))'];
+color_dls = char2rgb('b'); patchcolor_dls = color_dls+(1-color_dls)*.8;
+color_dms = char2rgb('k'); patchcolor_dms = color_dms+(1-color_dms)*.8;
+fill(xpatch,ypatch_dls,patchcolor_dls,'FaceAlpha',0.5,'EdgeColor',patchcolor_dls,'LineStyle','-');
+fill(xpatch,ypatch_dms,patchcolor_dms,'FaceAlpha',0.5,'EdgeColor',patchcolor_dms,'LineStyle','-');
+
 shadederrbar(time, movmean(nanmean([matDLS.alignDelta_full],2),5), movmean(SEM([matDLS.alignDelta_full],2),5), 'b'); hold on
 shadederrbar(time, movmean(nanmean([matDMS.alignDelta_full],2),5), movmean(SEM([matDMS.alignDelta_full],2),5), 'k'); 
 title('IV043: DLS (blue/n = 15 units) vs DMS (black/n = 10 units)');
