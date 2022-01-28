@@ -21,7 +21,7 @@ p1_mat(:,x) = movmean(P1,500);
 end
 
 %% PLOT all traces on logarithmic axis
-ds = 10;
+ds = 100;
 figure;
 loglog(f(1:ds:end), p1_mat((1:ds:end),1)); hold on
 for x = 2:length(new)
