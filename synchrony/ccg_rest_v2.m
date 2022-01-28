@@ -16,9 +16,9 @@ end
 mat = struct; %Initialize structure to save CCG output data into
 uni = unique({sub.rec}); %Find unique recording IDs across all units
 Fs = 50; %Sampling frequency for behavioral data
-diffFs = Fs;
+diffFs = 50;
 
-for x = 1:length(uni)
+for x = 1
     fprintf('%s \n',uni{x});
     idx = find(strcmp({sub.rec},uni{x})); %Find all units that match this unique recording ID
     idx_b = find(strcmp({beh.rec},uni{x})); %Find behavior data that matches this unique recording ID
@@ -52,9 +52,9 @@ for x = 1:length(uni)
         mat(x).shuffPrc{y} = prctile(ccgst.pairs(y).shuff,[5 50 95],2); %5th, 50th, 95th percentile of shuffled CCG's
         mat(x).shuffPrc_mvmt{y} = prctile(ccgst.pairs(y).shuff_mvmt,[5 50 95],2); %5th, 50th, 95th percentile of shuffled CCG's
         mat(x).shuffPrc_rest{y} = prctile(ccgst.pairs(y).shuff_rest,[5 50 95],2); %5th, 50th, 95th percentile of shuffled CCG's
-        % xc_diff = sub(idx(ccgst.pairs(y).n)).coor(1) - sub(idx(ccgst.pairs(y).m)).coor(1); %Distance in x- or y-dimension
-        % zc_diff = sub(idx(ccgst.pairs(y).n)).coor(2) - sub(idx(ccgst.pairs(y).m)).coor(2); %Distnace in z-dimension
-        % mat(x).dist(y) = hypot(xc_diff,zc_diff);
+%         xc_diff = sub(idx(ccgst.pairs(y).n)).coor(1) - sub(idx(ccgst.pairs(y).m)).coor(1); %Distance in x- or y-dimension
+%         zc_diff = sub(idx(ccgst.pairs(y).n)).coor(2) - sub(idx(ccgst.pairs(y).m)).coor(2); %Distnace in z-dimension
+%         mat(x).dist(y) = hypot(xc_diff,zc_diff);
     end
 end
 time = ccgst.lag;
@@ -63,21 +63,21 @@ time = ccgst.lag;
 time = [-2:0.01:2];
 ccg_full = []; ccg_mvmt = []; ccg_rest = [];
 ccgDelta = []; ccg95 = []; ccg50 = [];
-% ccgDelta_mvmt = []; ccgDelta_95mvmt = []; ccgDelta_50mvmt = [];
+ccgDelta_mvmt = []; ccgDelta_95mvmt = []; ccgDelta_50mvmt = [];
 ccgDelta_rest = []; ccgDelta_95rest = []; ccgDelta_50rest = [];
 
 for x = 1:length(mat)
     if isempty(mat(x).ccgZ_rest); continue; end
     ccg_full = [ccg_full, mat(x).ccg];
-    % ccg_mvmt = [ccg_mvmt, mat(x).ccg_mvmt]; 
+    ccg_mvmt = [ccg_mvmt, mat(x).ccg_mvmt]; 
     ccg_rest = [ccg_rest, mat(x).ccg_rest];
     for y = 1:length(mat(x).fr_rest)
         tmp = (mat(x).ccg(:,y) - mat(x).fr(y))./mat(x).fr(y); %deltaFR = (rate - mu(rate))/mu(rate)
         ccgDelta = [ccgDelta, tmp];
         tmp = (mat(x).ccg_rest(:,y) - mat(x).fr_rest(y))./mat(x).fr_rest(y); %deltaFR = (rate - mu(rate))/mu(rate)
         ccgDelta_rest = [ccgDelta_rest, tmp];
-%         tmp = (mat(x).ccg_mvmt(:,y) - mat(x).fr_mvmt(y))./mat(x).fr_mvmt(y); %deltaFR = (rate - mu(rate))/mu(rate)
-%         ccgDelta_mvmt = [ccgDelta_mvmt, tmp];
+        tmp = (mat(x).ccg_mvmt(:,y) - mat(x).fr_mvmt(y))./mat(x).fr_mvmt(y); %deltaFR = (rate - mu(rate))/mu(rate)
+        ccgDelta_mvmt = [ccgDelta_mvmt, tmp];
         
         tmp_95 = (mat(x).shuffPrc{y}(:,3) - mat(x).fr(y))./mat(x).fr(y); 
         tmp_50 = (mat(x).shuffPrc{y}(:,2) - mat(x).fr(y))./mat(x).fr(y);
@@ -89,10 +89,10 @@ for x = 1:length(mat)
         ccgDelta_95rest = [ccgDelta_95rest, tmp_95];
         ccgDelta_50rest = [ccgDelta_50rest, tmp_50];
         
-%         tmp_95 = (mat(x).shuffPrc_mvmt{y}(:,3) - mat(x).fr_mvmt(y))./mat(x).fr_mvmt(y); 
-%         tmp_50 = (mat(x).shuffPrc_mvmt{y}(:,2) - mat(x).fr_mvmt(y))./mat(x).fr_mvmt(y);
-%         ccgDelta_95mvmt = [ccgDelta_95mvmt, tmp_95];
-%         ccgDelta_50mvmt = [ccgDelta_50mvmt, tmp_50];
+        tmp_95 = (mat(x).shuffPrc_mvmt{y}(:,3) - mat(x).fr_mvmt(y))./mat(x).fr_mvmt(y); 
+        tmp_50 = (mat(x).shuffPrc_mvmt{y}(:,2) - mat(x).fr_mvmt(y))./mat(x).fr_mvmt(y);
+        ccgDelta_95mvmt = [ccgDelta_95mvmt, tmp_95];
+        ccgDelta_50mvmt = [ccgDelta_50mvmt, tmp_50];
     end
 end
 
@@ -111,8 +111,11 @@ title(sprintf('CCG rest spikes (n = %d pairs)',size(ccgZ,2)));
 %% PLOT DELTA-FIRING RATE
 figure; 
 sm = 5;
-shadederrbar(time, movmean(nanmean(ccgDelta_50rest,2),sm), movmean(nanmean(ccgDelta_95rest,2),sm), 'k'); hold on
+shadederrbar(time, movmean(nanmean(ccgDelta_50rest,2),sm), movmean(nanmean(ccgDelta_95rest,2),sm), 'r'); hold on
 shadederrbar(time, movmean(nanmean(ccgDelta_rest,2),sm), movmean(SEM(ccgDelta_rest,2),sm), 'b'); 
+shadederrbar(time, movmean(nanmean(ccgDelta_50mvmt,2),sm), movmean(nanmean(ccgDelta_95mvmt,2),sm), 'g'); hold on
+shadederrbar(time, movmean(nanmean(ccgDelta_mvmt,2),sm), movmean(SEM(ccgDelta_mvmt,2),sm), 'b'); 
+
 %plot(time, movmean(ccgDelta_mvmt,sm,1), ':b');
 xlabel('Lag (s)'); ylabel('CCG (deltaFR)'); xlim([-1 1]); grid on; 
 title(sprintf('CCG spikes REST (n = %d pairs)',size(ccgDelta_rest,2)));
@@ -120,6 +123,18 @@ title(sprintf('CCG spikes REST (n = %d pairs)',size(ccgDelta_rest,2)));
 % figure; violinplot(max(ccgDelta,[],1)); xlim([0.6 1.4]); ylim([-0.1 1.5]);
 % ylabel('Max deltaFR'); grid on
 % title(sprintf('Max deltaFR (n = %d pairs)',length(max(ccgDelta,[],1))));
+
+%% HEATMAP
+figure;
+a = ccgDelta_rest;
+b = a(time == 0,:); % find delta @ lag = 0
+[c, ii] = sort(b); % sort in ascending order
+h = heatmap(a([find(time == -0.5):find(time == 0.5)],ii)');
+h.Title = 'REST CIN pair CCG';
+h.XLabel = 'Lag from reference spike (s)'; 
+h.YLabel = 'Pair Number';
+h.Colormap = jet; h.ColorLimits = [-0.4 1.4]; h.GridVisible = 'off';
+
 
 %% PLOT versus DISTANCE
 x_var = [mat.dist]'; %x_var = [mat.fr]';
@@ -146,8 +161,8 @@ xlim([-50 1150]);
 %% PLOT proportion of pair CCG > 95% CI
 above95 = []; below5 = [];
 for x = 1:length(mat)
-    for y = 1:size(mat(x).ccg_rest,2)
-        a = mat(x).ccg_rest(:,y); b = mat(x).shuffPrc_rest{y};
+    for y = 1:size(mat(x).ccg_mvmt,2)
+        a = mat(x).ccg_mvmt(:,y); b = mat(x).shuffPrc_mvmt{y};
         above95 = [above95, a > b(:,3)]; %binary vector where CCG passed 95% confidence interval
         below5 = [below5, a < b(:,1)]; %binary vector where CCG below 5% confidence interval
     end
@@ -156,8 +171,9 @@ end
 figure; hold on
 bar(time, 100*sum(above95,2)/size(above95,2),'FaceColor','b','FaceAlpha',0.5);
 bar(time, -100*sum(below5,2)/size(below5,2),'FaceColor','b','FaceAlpha',0.5);
-xlabel('Lag (s)'); ylabel('Prop of Pair CCG > 95% CI (%)');
-title(sprintf('Proportion of pair CCGs > 95p CI (n = %d pairs)',size(above95,2)))
+xlabel('Lag (s)'); ylabel('Prop of Pair CCG > 95% CI (%)'); 
+xlim([-1 1]); ylim([-50 100]);
+title(sprintf('MVMT (n = %d pairs) %1.2f p > 95CI',size(above95,2),100*sum(above95(201,:),2)/size(above95,2)))
 
 %% PLOT IV069_rec01 ONLY
 x = 21; a = [12,23]; sm = 5;
